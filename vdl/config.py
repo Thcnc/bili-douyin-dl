@@ -159,6 +159,13 @@ def find_ffmpeg() -> str:
 
 
 def download_dir() -> Path:
-    path = Path(get("download_dir")).expanduser()
-    path.mkdir(parents=True, exist_ok=True)
-    return path
+    """Return the output directory, creating it and falling back if it is not writable."""
+    candidates = [Path(get("download_dir")).expanduser()]
+    candidates.append(Path(__file__).resolve().parent.parent / "downloads")
+    for path in candidates:
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+            return path.resolve()
+        except OSError:
+            continue
+    return candidates[-1]
