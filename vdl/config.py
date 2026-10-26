@@ -10,10 +10,28 @@ import sys
 from pathlib import Path
 from typing import Any, Dict
 
-APP_DIR = Path(__file__).resolve().parent.parent
-WEB_DIR = APP_DIR / "web"
-BIN_DIR = APP_DIR / "bin"
+FROZEN = bool(getattr(sys, "frozen", False))
+
+# Where the read-only resources (web UI, bundled tools) live.  Inside a
+# PyInstaller build this is the unpacked temp folder (``_MEIPASS``).
+RESOURCE_DIR = (
+    Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
+    if FROZEN
+    else Path(__file__).resolve().parent.parent
+)
+
+# Where user data (settings.json) may be written.
+APP_DIR = Path(os.environ.get("APPDATA") or Path.home()) / "bili-douyin-dl" if FROZEN else RESOURCE_DIR
+
+WEB_DIR = RESOURCE_DIR / "web"
+BIN_DIR = RESOURCE_DIR / "bin"
 SETTINGS_PATH = APP_DIR / "settings.json"
+
+if FROZEN:
+    try:
+        APP_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
 
 DEFAULTS: Dict[str, Any] = {
     "download_dir": str(Path.home() / "Videos" / "VideoDownloader"),
@@ -126,6 +144,7 @@ def _ytdlp_works(exe: str) -> bool:
 
 def find_ytdlp() -> str:
     candidates = [
+        os.environ.get("VDL_YTDLP"),
         get("ytdlp_path"),
         BIN_DIR / "yt-dlp.exe",
         BIN_DIR / "yt-dlp",
@@ -145,6 +164,9 @@ def find_ffmpeg() -> str:
     configured = get("ffmpeg_path")
     if configured and Path(configured).is_file():
         return configured
+    for bundled in (BIN_DIR / "ffmpeg.exe", BIN_DIR / "ffmpeg" / "ffmpeg.exe", BIN_DIR / "ffmpeg"):
+        if bundled.is_file():
+            return str(bundled)
     which = shutil.which("ffmpeg")
     if which:
         return which

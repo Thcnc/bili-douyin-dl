@@ -19,13 +19,15 @@
 需要 Python 3.10+（Windows 上安装时记得勾选 *Add python.exe to PATH*）。
 
 ```bash
-git clone https://github.com/<your-name>/bili-douyin-dl.git
+git clone https://github.com/Thcnc/bili-douyin-dl.git
 cd bili-douyin-dl
 python scripts/fetch_deps.py --with-ffmpeg   # 下载 yt-dlp 和 ffmpeg 到 bin/
 python app.py                                # 自动打开 http://127.0.0.1:8765/
 ```
 
 或者直接双击 `run.bat`（Windows）。
+
+不想装 Python？双击 `BiliDouyinDL.exe` 即可：它是打包好的单文件程序，内置 yt-dlp 和 ffmpeg，运行后自动打开同样的界面，不需要任何环境依赖（首次启动会解压，约 2–3 秒）。
 
 启动后：
 
@@ -43,6 +45,16 @@ python app.py                                # 自动打开 http://127.0.0.1:876
 
 也可以把浏览器导出的 `cookies.txt` 填到「cookies.txt 路径」。B站 1080P（大会员清晰度）同样可以在设置里填 `SESSDATA` 等 Cookie 后解锁。
 
+## 打包成 exe
+
+```bash
+python -m pip install pyinstaller
+python scripts/build_exe.py             # 单文件 dist/BiliDouyinDL.exe
+python scripts/build_exe.py --onedir    # 或打包成文件夹，启动更快
+```
+
+打包前请确保 `bin/yt-dlp.exe`、`bin/ffmpeg/ffmpeg.exe` 已就位（`python scripts/fetch_deps.py --with-ffmpeg` 会自动放好），它们会被一起打进 exe，用户机器上无需再下载。
+
 ## 命令行参数
 
 ```bash
@@ -58,6 +70,7 @@ bili-douyin-dl/
 ├─ app.py                  # 入口：起服务 + 打开浏览器
 ├─ run.bat                 # Windows 一键启动
 ├─ scripts/fetch_deps.py   # 下载 yt-dlp / ffmpeg 到 bin/
+├─ scripts/build_exe.py    # PyInstaller 打包成 exe
 ├─ vdl/
 │  ├─ server.py            # 本地 HTTP API + 静态文件服务（标准库）
 │  ├─ downloader.py        # 下载队列、进度解析、取消

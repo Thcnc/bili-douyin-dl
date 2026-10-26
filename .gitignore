@@ -4,6 +4,9 @@ __pycache__/
 venv/
 env/
 bin/
+build/
+dist/
+*.spec
 settings.json
 downloads/
 *.part
