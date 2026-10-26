@@ -153,6 +153,17 @@ class DownloadManager:
                 del self._tasks[key]
 
     # ------------------------------------------------------------- internal
+    @staticmethod
+    def _fill_final_size(task: Task) -> None:
+        """Use the real file size when the downloader never reported a total."""
+        try:
+            if task.filepath and os.path.isfile(task.filepath):
+                size = os.path.getsize(task.filepath)
+                if size > 0:
+                    task.total_bytes = size
+        except OSError:
+            pass
+
     def _run(self, task: Task) -> None:
         with self._semaphore:
             if task._cancel.is_set():
@@ -170,6 +181,7 @@ class DownloadManager:
                 else:
                     task.status = "done"
                     task.progress = 100.0
+                    self._fill_final_size(task)
             except Exception as exc:  # noqa: BLE001
                 if task._cancel.is_set():
                     task.status = "canceled"
