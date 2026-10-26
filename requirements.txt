@@ -1,0 +1,2 @@
+# 本项目只使用 Python 标准库，无需 pip 安装任何包。
+# Python 3.10+ 即可运行；外部工具（yt-dlp / ffmpeg）由 scripts/fetch_deps.py 下载。

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>视频下载器 · B站 / 抖音</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⬇️</text></svg>" />
+</head>
+<body>
+  <div class="aurora"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">↓</div>
+      <div>
+        <h1>视频下载器</h1>
+        <p>B站 · 抖音 · 本地解析下载</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span id="dep-status" class="pill pill-warn" title="依赖状态">检测中…</span>
+      <button class="ghost" id="btn-folder">下载目录</button>
+      <button class="ghost" id="btn-settings">设置</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="card input-card">
+      <label class="field-label" for="links">粘贴链接</label>
+      <textarea id="links" rows="4" spellcheck="false"
+        placeholder="支持 B站（bilibili.com / b23.tv）和抖音（v.douyin.com 分享链接、douyin.com/video/…）&#10;可以一次粘贴多个链接，或直接粘贴抖音分享文本"></textarea>
+      <div class="input-row">
+        <div class="hint">解析后选择清晰度再下载，文件保存在本地下载目录。</div>
+        <div class="input-buttons">
+          <button class="ghost" id="btn-clear">清空</button>
+          <button class="primary" id="btn-parse">
+            <span class="spinner hidden" id="parse-spinner"></span>
+            <span id="parse-label">解析链接</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="errors" class="errors hidden"></section>
+
+    <section id="results" class="results"></section>
+
+    <section class="tasks-section">
+      <div class="section-head">
+        <h2>下载任务 <span id="task-count" class="count">0</span></h2>
+        <button class="ghost small" id="btn-clear-tasks">清除已完成</button>
+      </div>
+      <div id="tasks" class="tasks">
+        <div class="empty" id="tasks-empty">还没有下载任务</div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal hidden" id="settings-modal">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>设置</h3>
+        <button class="icon-btn" data-close>×</button>
+      </div>
+      <div class="modal-body">
+        <label class="field">
+          <span>下载目录</span>
+          <input id="set-dir" type="text" />
+        </label>
+        <label class="field">
+          <span>同时下载任务数</span>
+          <input id="set-concurrency" type="number" min="1" max="6" />
+        </label>
+        <label class="field">
+          <span>Cookie 来源（本机浏览器） <em>（抖音需要：先在浏览器打开一次 douyin.com）</em></span>
+          <select id="set-cookie-browser">
+            <option value="">不使用</option>
+            <option value="edge">Microsoft Edge</option>
+            <option value="chrome">Google Chrome</option>
+            <option value="firefox">Firefox</option>
+            <option value="brave">Brave</option>
+            <option value="chromium">Chromium</option>
+            <option value="opera">Opera</option>
+            <option value="vivaldi">Vivaldi</option>
+            <option value="safari">Safari</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>cookies.txt 路径 <em>（可选，与上面的浏览器二选一）</em></span>
+          <input id="set-cookie-file" type="text" placeholder="例如 D:\cookies.txt" />
+        </label>
+        <label class="field">
+          <span>B站 Cookie <em>（可选，1080P+ 需要登录）</em></span>
+          <textarea id="set-bili" rows="3" placeholder="SESSDATA=...; bili_jct=...;"></textarea>
+        </label>
+        <label class="field">
+          <span>抖音 Cookie <em>（可选，解析失败时填写）</em></span>
+          <textarea id="set-dy" rows="3" placeholder="从浏览器开发者工具复制 Cookie"></textarea>
+        </label>
+        <div class="dep-box" id="dep-box"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="ghost" data-close>取消</button>
+        <button class="primary" id="btn-save-settings">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toasts" class="toasts"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
