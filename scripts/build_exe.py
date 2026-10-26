@@ -52,8 +52,13 @@ def main() -> None:
     else:
         print("警告: 未找到 ffmpeg（bin/ffmpeg/ffmpeg.exe），打包后高清（DASH）合并会不可用")
 
-    for folder in ("build", "dist"):
-        shutil.rmtree(ROOT / folder, ignore_errors=True)
+    dist = ROOT / "dist"
+    target = dist / (NAME + ("" if args.onedir else ".exe"))
+    shutil.rmtree(ROOT / "build", ignore_errors=True)
+    if target.is_dir():
+        shutil.rmtree(target, ignore_errors=True)
+    elif target.exists():
+        target.unlink()
 
     cmd = [
         sys.executable,
