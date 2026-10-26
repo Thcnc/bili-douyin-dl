@@ -25,8 +25,13 @@ ICON = ROOT / "assets" / "app.ico"
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="打包为独立 exe")
-    parser.add_argument("--onedir", action="store_true", help="打包成文件夹（启动更快）")
+    parser.add_argument(
+        "--onefile",
+        action="store_true",
+        help="打成单文件 exe（每次启动都要解压到临时目录，可能被安全软件拦截；默认打文件夹）",
+    )
     args = parser.parse_args()
+    onedir = not args.onefile
 
     try:
         import PyInstaller  # noqa: F401
@@ -53,7 +58,7 @@ def main() -> None:
         print("警告: 未找到 ffmpeg（bin/ffmpeg/ffmpeg.exe），打包后高清（DASH）合并会不可用")
 
     dist = ROOT / "dist"
-    target = dist / (NAME + ("" if args.onedir else ".exe"))
+    target = dist / (NAME + ("" if onedir else ".exe"))
     shutil.rmtree(ROOT / "build", ignore_errors=True)
     if target.is_dir():
         shutil.rmtree(target, ignore_errors=True)
@@ -66,7 +71,7 @@ def main() -> None:
         "PyInstaller",
         "--noconfirm",
         "--clean",
-        "--onedir" if args.onedir else "--onefile",
+        "--onedir" if onedir else "--onefile",
         "--windowed",
         "--name",
         NAME,
@@ -85,7 +90,7 @@ def main() -> None:
 
     print(" ".join(cmd))
     subprocess.run(cmd, check=True, cwd=ROOT)
-    target = ROOT / "dist" / (NAME if args.onedir else NAME + ".exe")
+    target = ROOT / "dist" / (NAME if onedir else NAME + ".exe")
     size = (
         sum(f.stat().st_size for f in target.rglob("*") if f.is_file())
         if target.is_dir()

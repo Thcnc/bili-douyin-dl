@@ -27,7 +27,9 @@ python app.py                                # 自动打开 http://127.0.0.1:876
 
 或者直接双击 `run.bat`（Windows）。
 
-不想装 Python？双击 `BiliDouyinDL.exe` 即可：它是打包好的单文件程序，内置 yt-dlp 和 ffmpeg，运行后自动打开同样的界面，不需要任何环境依赖（首次启动会解压，约 2–3 秒）。
+不想装 Python？下载 [Releases](https://github.com/Thcnc/bili-douyin-dl/releases) 里的 `BiliDouyinDL-win64.zip`，解压后双击里面的 `BiliDouyinDL.exe` 即可：内置 yt-dlp 和 ffmpeg，不需要任何环境依赖，也不联网下载组件。
+
+> 注：**单文件** exe（`--onefile`）每次启动都要把自己解压到临时目录，某些机器（安全软件、TEMP 不可写）会报 `could not create temporary directory`。所以默认发布**文件夹版**，启动快且更可靠。
 
 启动后：
 
@@ -49,8 +51,8 @@ python app.py                                # 自动打开 http://127.0.0.1:876
 
 ```bash
 python -m pip install pyinstaller
-python scripts/build_exe.py             # 单文件 dist/BiliDouyinDL.exe
-python scripts/build_exe.py --onedir    # 或打包成文件夹，启动更快
+python scripts/build_exe.py             # 文件夹版 dist/BiliDouyinDL/（推荐）
+python scripts/build_exe.py --onefile   # 单文件版 dist/BiliDouyinDL.exe（启动慢，可能被安全软件拦截）
 ```
 
 打包前请确保 `bin/yt-dlp.exe`、`bin/ffmpeg/ffmpeg.exe` 已就位（`python scripts/fetch_deps.py --with-ffmpeg` 会自动放好），它们会被一起打进 exe，用户机器上无需再下载。
