@@ -4,7 +4,7 @@ const state = {
   items: [],
   tasks: [],
   settings: null,
-  deps: { ytdlp: "", ffmpeg: "" },
+  deps: { ytdlp: "", ffmpeg: "", ytdlp_error: "" },
   parseBusy: false,
 };
 
@@ -86,7 +86,9 @@ function renderDeps() {
   $("#dep-box").innerHTML = [
     `yt-dlp：${state.deps.ytdlp ? esc(state.deps.ytdlp) : "未找到（B站下载必需）"}`,
     `ffmpeg：${state.deps.ffmpeg ? esc(state.deps.ffmpeg) : "未找到（B站高清合并必需）"}`,
+    state.deps.ytdlp_error ? `yt-dlp 启动失败：${esc(state.deps.ytdlp_error)}` : "",
   ]
+    .filter(Boolean)
     .map((line) => `<div>${line}</div>`)
     .join("");
 }

@@ -47,6 +47,7 @@ def fetch_info(url: str, timeout: int = 120) -> Dict[str, Any]:
             errors="replace",
             timeout=timeout,
             creationflags=creation,
+            env=config.child_env(),
         )
     except subprocess.TimeoutExpired:
         raise ParseError("yt-dlp 解析超时，请稍后重试")

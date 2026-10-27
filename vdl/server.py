@@ -30,6 +30,8 @@ class Application:
             "deps": {
                 "ytdlp": config.find_ytdlp(),
                 "ffmpeg": config.find_ffmpeg(),
+                "ytdlp_error": config.ytdlp_failure(),
+                "frozen": config.FROZEN,
             },
         }
 

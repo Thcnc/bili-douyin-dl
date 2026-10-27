@@ -77,7 +77,7 @@ def _open_browser(url: str) -> bool:
         else:
             webbrowser.open(url)
         return True
-    except OSError:
+    except Exception:  # noqa: BLE001 - startfile raises OSError in practice
         try:
             return webbrowser.open(url)
         except Exception:  # noqa: BLE001
@@ -107,6 +107,69 @@ def _already_running(host: str, port: int) -> bool:
             return resp.status == 200
     except Exception:  # noqa: BLE001
         return False
+
+
+def _has_tk() -> bool:
+    try:
+        import tkinter  # noqa: F401
+    except Exception:  # noqa: BLE001
+        return False
+    return True
+
+
+def _control_window(url: str, httpd, missing: list) -> None:
+    """A tiny always-visible window: the exe runs without a console, so without
+    this the user has no handle on the program at all."""
+    import tkinter as tk
+    from tkinter import ttk
+
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+
+    root = tk.Tk()
+    root.title("B站 / 抖音 视频下载器")
+    root.geometry("480x200")
+    root.resizable(False, False)
+    try:
+        root.attributes("-topmost", True)
+    except tk.TclError:
+        pass
+
+    tk.Label(root, text="下载服务已启动，在浏览器里使用：", font=("Microsoft YaHei UI", 10)).pack(pady=(16, 6))
+
+    entry = tk.Entry(root, width=48, justify="center", font=("Consolas", 10))
+    entry.insert(0, url)
+    entry.configure(state="readonly")
+    entry.pack(pady=2)
+
+    def open_ui() -> None:
+        if not _open_browser(url):
+            _notify(url)
+
+    status = tk.StringVar(value="正在打开浏览器…" if not missing else "缺少依赖：" + "、".join(missing))
+    tk.Label(root, textvariable=status, fg="#b45309" if missing else "#4b5563").pack(pady=(6, 0))
+
+    row = tk.Frame(root)
+    row.pack(pady=12)
+    ttk.Button(row, text="打开界面", command=open_ui).pack(side="left", padx=8)
+    ttk.Button(row, text="退出程序", command=root.destroy).pack(side="left", padx=8)
+
+    def close() -> None:
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", close)
+
+    def auto_open() -> None:
+        if _open_browser(url):
+            try:
+                status.set("已在浏览器打开；关掉这个窗口会退出程序")
+            except tk.TclError:
+                pass
+
+    threading.Timer(0.6, auto_open).start()
+    root.mainloop()
+    httpd.shutdown()
+    httpd.server_close()
+    _log_line("窗口已关闭，服务停止")
 
 
 def main() -> None:
@@ -158,12 +221,14 @@ def main() -> None:
     print("  按 Ctrl+C 退出")
     print("=" * 56)
 
-    if not args.no_browser:
-        def _open_later() -> None:
-            if not _open_browser(url):
-                _notify(url)
-
-        threading.Timer(0.8, _open_later).start()
+    if not args.no_browser and _has_tk():
+        try:
+            _control_window(url, httpd, missing)
+            return
+        except Exception as exc:  # noqa: BLE001
+            _log_line(f"控制窗口启动失败，回退到后台模式：{exc}")
+    elif not args.no_browser:
+        threading.Timer(0.8, lambda: _open_browser(url) or _notify(url)).start()
 
     try:
         httpd.serve_forever()

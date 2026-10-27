@@ -108,6 +108,44 @@ def ytdlp_cookie_args() -> list:
     return args
 
 
+_PYI_ENV_PREFIXES = ("_PYI_", "_MEIPASS")
+
+
+def child_env() -> Dict[str, str]:
+    """Environment for the bundled tools.
+
+    Our own exe is a PyInstaller build, and yt-dlp.exe is *also* a PyInstaller
+    onefile.  PyInstaller exports ``_PYI_*`` / ``_MEIPASS`` variables to child
+    processes; a nested onefile inheriting them tries to reuse the parent's
+    unpacked folder and dies with "Failed to create parent directory
+    structure".  Dropping them makes the child unpack itself normally.
+
+    The temp directory is also redirected into our own app-data folder: if the
+    system ``%TEMP%`` is not writable for a spawned process, yt-dlp dies with
+    "Could not create temporary directory!" before it can do anything useful.
+    """
+    env = {k: v for k, v in os.environ.items() if not k.startswith(_PYI_ENV_PREFIXES)}
+    if not _temp_writable(env.get("TEMP") or env.get("TMP") or ""):
+        tmp = APP_DIR / "tmp"
+        if _temp_writable(str(tmp)):
+            env["TMP"] = env["TEMP"] = env["TMPDIR"] = str(tmp)
+    return env
+
+
+def _temp_writable(path: str) -> bool:
+    if not path:
+        return False
+    try:
+        target = Path(path)
+        target.mkdir(parents=True, exist_ok=True)
+        probe = target / ".vdl_probe"
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink(missing_ok=True)
+        return True
+    except OSError:
+        return False
+
+
 def _first_existing(candidates) -> str:
     for candidate in candidates:
         if not candidate:
@@ -122,24 +160,39 @@ def _first_existing(candidates) -> str:
 
 
 _ytdlp_cache: Dict[str, str] = {}
+_ytdlp_failure: Dict[str, str] = {}
 
 
 def _ytdlp_works(exe: str) -> bool:
     if exe in _ytdlp_cache:
         return bool(_ytdlp_cache[exe])
     ok = False
+    detail = ""
     try:
         proc = subprocess.run(
             [exe, "--version"],
             capture_output=True,
-            timeout=15,
+            timeout=25,
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            env=child_env(),
         )
         ok = proc.returncode == 0 and bool(proc.stdout.strip())
-    except (OSError, subprocess.SubprocessError):
-        ok = False
+        if not ok:
+            err = (proc.stderr or b"").decode("utf-8", "replace").strip()
+            detail = err.splitlines()[-1] if err else f"退出码 {proc.returncode}"
+    except (OSError, subprocess.SubprocessError) as exc:
+        detail = f"{type(exc).__name__}: {exc}"
     _ytdlp_cache[exe] = "ok" if ok else ""
+    if not ok:
+        _ytdlp_failure[exe] = detail
     return ok
+
+
+def ytdlp_failure() -> str:
+    """Why the bundled yt-dlp was rejected, for the UI to show."""
+    for exe, detail in reversed(list(_ytdlp_failure.items())):
+        return f"{Path(exe).name}: {detail}"
+    return ""
 
 
 def find_ytdlp() -> str:

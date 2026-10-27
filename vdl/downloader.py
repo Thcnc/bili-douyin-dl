@@ -381,6 +381,7 @@ class DownloadManager:
             stderr=subprocess.STDOUT,
             stdin=subprocess.DEVNULL,
             creationflags=creation,
+            env=config.child_env(),
             text=True,
             encoding="utf-8",
             errors="replace",
