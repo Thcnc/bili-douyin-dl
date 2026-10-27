@@ -69,6 +69,46 @@ def _log_fatal(exc: BaseException) -> None:
         print(detail)
 
 
+def _open_browser(url: str) -> bool:
+    """Open the UI in the default browser; return False when nothing could be opened."""
+    try:
+        if sys.platform == "win32":
+            os.startfile(url)  # type: ignore[attr-defined]
+        else:
+            webbrowser.open(url)
+        return True
+    except OSError:
+        try:
+            return webbrowser.open(url)
+        except Exception:  # noqa: BLE001
+            return False
+
+
+def _notify(url: str) -> None:
+    """Windowed exe has no console: show a dialog so a failed browser launch is visible."""
+    try:
+        import ctypes
+
+        ctypes.windll.user32.MessageBoxW(
+            None,
+            f"程序已启动。\n\n请在浏览器里打开：\n{url}\n\n（这个提示关掉即可，程序会在后台运行）",
+            "视频下载器",
+            0x40,
+        )
+    except Exception:  # noqa: BLE001
+        print(f"请手动打开 {url}")
+
+
+def _already_running(host: str, port: int) -> bool:
+    import urllib.request
+
+    try:
+        with urllib.request.urlopen(f"http://{host}:{port}/api/state", timeout=1.5) as resp:
+            return resp.status == 200
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="B站 / 抖音 本地视频下载器")
     parser.add_argument("--host", default="127.0.0.1")
@@ -85,6 +125,13 @@ def main() -> None:
         sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     except (AttributeError, ValueError):
         pass
+
+    if _already_running(args.host, args.port):
+        url = f"http://{args.host}:{args.port}/"
+        _log_line(f"已有实例在运行：{url}")
+        if not args.no_browser and not _open_browser(url):
+            _notify(url)
+        return
 
     port = _free_port(args.host, args.port)
     try:
@@ -112,7 +159,11 @@ def main() -> None:
     print("=" * 56)
 
     if not args.no_browser:
-        threading.Timer(0.8, lambda: webbrowser.open(url)).start()
+        def _open_later() -> None:
+            if not _open_browser(url):
+                _notify(url)
+
+        threading.Timer(0.8, _open_later).start()
 
     try:
         httpd.serve_forever()
